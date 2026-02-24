@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    {% block styles %}{% endblock %}
+    <script src="{{ url_for('static', filename='javascript/utils/Sortable.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='javascript/styles.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<header>
+    <div class="menu">
+        <a href="/video">Video</a>
+        <a href="/track">Track</a>
+        <a href="/image">Image</a>
+        <a href="/pdf">PDF</a>
+    </div>
+</header>
+{% block content %}{% endblock %}
+</body>
+</html>

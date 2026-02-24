@@ -1,0 +1,5 @@
+Flask
+environs
+pillow
+pillow_heif
+pypdf

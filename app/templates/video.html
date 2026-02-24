@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Merger{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='video.css') }}">{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='video.js') }}"></script>
+{% endblock %}
+
+{% block body_class %}video-page{% endblock %}
+
+{% block content %}
+<div class="app">
+    <div class="controls">
+        <button onclick="addColumn('audio')">+ Добавить озвучку</button>
+        <button onclick="addColumn('subtitle')">+ Добавить субтитры</button>
+        <button class="compile-btn" onclick="compileMedia()">Объединить</button>
+    </div>
+    <div class="columns" id="columns">
+        <div class="column" data-type="video">
+            <div class="column-header">
+                <div class="column-header-top"><span>Видео</span></div>
+            </div>
+            <div class="column-content" id="video-column" data-type="video"></div>
+            <label class="upload-label">Загрузить видео<input type="file" multiple accept=".mkv" onchange="handleFiles(event, 'video-column', 'video')"></label>
+        </div>
+    </div>
+</div>
+<script>
+function createSortable(container){ if(!container) return; new Sortable(container,{animation:150,group:'shared'}); }
+function extractNumberFromFilename(name){
+    const base = (name||'').split('/').pop();
+    const m = base.match(/(\d+)/);
+    return m ? parseInt(m[1],10) : null;
+}
+function sortFilesByNumberThenAlpha(fileArray){
+    return fileArray.sort((a,b)=>{
+        const aName = a.webkitRelativePath || a.name;
+        const bName = b.webkitRelativePath || b.name;
+        const aNum = extractNumberFromFilename(aName);
+        const bNum = extractNumberFromFilename(bName);
+        if(aNum !== null && bNum !== null){
+            if(aNum !== bNum) return aNum - bNum;
+            return aName.localeCompare(bName, undefined, {sensitivity:'base'});
+        }
+        if(aNum !== null) return -1;
+        if(bNum !== null) return 1;
+        return aName.localeCompare(bName, undefined, {sensitivity:'base', numeric:true});
+    });
+}
+function handleFiles(event,columnId,explicitType=null){
+    const files=event.target.files;
+    const columnContent=document.getElementById(columnId);
+    // columnContent is the inner .column-content; find its parent .column for header/input
+    const columnElem = columnContent?.closest('.column') || columnContent;
+    const columnType=explicitType||columnContent?.dataset?.type;
+    // Convert FileList to array and sort: numeric sequences first, then alphabetical
+    let fileArray = files ? Array.from(files) : [];
+    if(fileArray.length>0) fileArray = sortFilesByNumberThenAlpha(fileArray);
+    // If user selected a directory, infer top-level folder name from the first (sorted) file's relative path
+    let folderName = null;
+    if(fileArray && fileArray.length>0){
+        const firstPath = fileArray[0].webkitRelativePath || fileArray[0].name;
+        if(firstPath && firstPath.includes('/')) folderName = firstPath.split('/')[0];
+    }
+    fileArray.forEach(file=>{
+        const ext=file.name.split('.').pop().toLowerCase();
+        if(columnType==='video' && ext!=='mkv'){
+            console.log(`${file.name} не .mkv`);
+            return;
+        }
+        if(columnType==='audio' && ext!=='mka'){
+            console.log(`${file.name} не .mka`);
+            return;
+        }
+        const item=document.createElement('div');
+        item.className='file-item';
+        // Use webkitRelativePath when available (directory uploads) otherwise fallback to filename
+        const filepath = file.webkitRelativePath || file.name;
+        item.dataset.filename = file.name;
+        item.dataset.filepath = filepath;
+        // show filename but keep filepath in dataset for server-side resolution
+        item.innerHTML=`<span>${file.name}</span><button class="delete-btn" onclick="removeFile(event)">Удалить</button>`;
+        columnContent.appendChild(item);
+    });
+    // Auto-fill track name input with folder name if present and input empty
+    if(folderName){
+        const input = columnElem.querySelector('.track-name-input');
+        if(input && !input.value) input.value = folderName;
+    }
+    event.target.value='';
+}
+function removeFile(event){
+    event.preventDefault();
+    const item=event.target.closest('.file-item');
+    item.remove();
+}
+function addColumn(type){
+    const columnsContainer=document.getElementById('columns');
+    const id=type+'-'+Date.now();
+    const column=document.createElement('div');
+    column.className='column';
+    column.dataset.type=type;
+    // For audio columns allow directory selection so webkitRelativePath is available in supported browsers
+    const dirAttr = 'webkitdirectory';
+    column.innerHTML=`<div class="column-header"><div class="column-header-top"><span>${type==='audio'?'Озвучка':'Субтитры'}</span><button class="delete-btn" onclick="removeColumn(this)">Удалить</button></div><input type="text" class="track-name-input" placeholder="Имя дорожки" /></div><div class="column-content" id="${id}" data-type="${type}"></div><label class="upload-label">Загрузить ${type==='audio'?'аудио':'субтитры'}<input type="file" multiple ${dirAttr} accept="${type==='audio'?'.mka':'.srt,.ass,.vtt'}" onchange="handleFiles(event,'${id}','${type}')"></label>`;
+    columnsContainer.appendChild(column);
+    createSortable(column.querySelector('.column-content'));
+}
+function removeColumn(button){
+    const column=button.closest('.column');
+    const content=column.querySelector('.column-content');
+    if(content.children.length>0){if(!confirm('Колонка содержит файлы. Удалить?')) return;}
+    column.remove();
+}
+async function compileMedia(){
+    const data={};
+    const videoItems=[...document.querySelectorAll('#video-column .file-item')];
+    const columns=[...document.querySelectorAll('.column:not([data-type="video"])')];
+    videoItems.forEach((videoItem,index)=>{
+        // Use stored filepath when available to disambiguate identical filenames in different folders
+        const videoKey = videoItem.dataset.filepath || videoItem.dataset.filename;
+        data[videoKey]={audio:[],subtitles:[]};
+        columns.forEach(col=>{
+            const type=col.dataset.type;
+            const files=[...col.querySelectorAll('.file-item')];
+            const file=files[index];
+            if(!file) return;
+            const trackName=col.querySelector('.track-name-input')?.value||'';
+            const fileRef = file.dataset.filepath || file.dataset.filename;
+            if(type==='audio') data[videoKey].audio.push({name:trackName,file:fileRef});
+            if(type==='subtitle') data[videoKey].subtitles.push({name:trackName,file:fileRef});
+        });
+    });
+    try {
+        const response = await fetch("{{ url_for('api.video.merge') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Ошибка сервера');
+        const result = await response.json();
+        console.log(JSON.stringify(result,null,2));
+    } catch (err) {
+        alert('Ошибка при отправке: ' + err.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    createSortable(document.getElementById('video-column'));
+    const cols = document.getElementById('columns');
+    if(cols) new Sortable(cols,{animation:150,draggable:'.column:not([data-type="video"])',handle:'.column-header-top'});
+});
+
+</script>
+{% endblock %}

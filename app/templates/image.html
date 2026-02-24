@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Конвертер изображений{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">{% endblock %}
+
+
+{% block body_class %}image-page{% endblock %}
+
+{% block content %}
+<div class="app">
+    <div class="form-container">
+        <label for="imageFile">Файлы</label>
+        <div class="file-drop" id="imageDrop">
+            <span id="imageDropText">Перетащите файлы сюда или кликните</span>
+            <input type="file" id="imageFile" name="file" multiple accept="image/*" />
+        </div>
+        <div class="hint">Поддерживаются форматы: PNG, JPG, GIF, TIFF, HEIF/AVIF (при наличии поддержки).</div>
+
+        <label for="format">Формат назначения:</label>
+        <select id="format" name="format">
+            <option value="jpeg">JPEG</option>
+            <option value="png">PNG</option>
+            <option value="webp">WEBP</option>
+            <option value="heif">HEIF</option>
+            <option value="avif">AVIF</option>
+            <option value="gif">GIF</option>
+            <option value="tiff">TIFF</option>
+            <option value="bmp">BMP</option>
+        </select>
+
+        <div id="qualityBox" class="field-container">
+            <label for="quality">Качество (для JPEG/WEBP):</label>
+            <input type="number" id="quality" name="quality" min="1" max="100" value="85">
+        </div>
+
+        <button type="button" id="convertBtn" class="submit-btn">Конвертировать</button>
+
+        <div class="output" id="output"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    setupDragDrop('imageDrop','imageFile','imageDropText');
+
+    const fmt = document.getElementById('format');
+    const qualityBox = document.getElementById('qualityBox');
+    function updateQualityVisibility(){
+        const v = (fmt && fmt.value) ? fmt.value.toLowerCase() : '';
+        if(!qualityBox) return;
+        if(v === 'jpeg' || v === 'webp') qualityBox.style.display = 'flex';
+        else qualityBox.style.display = 'none';
+    }
+    if(fmt) fmt.addEventListener('change', updateQualityVisibility);
+    updateQualityVisibility();
+
+    const btn = document.getElementById('convertBtn');
+    const output = document.getElementById('output');
+    btn && btn.addEventListener('click', async function(){
+        output.innerHTML = 'Отправка...';
+        const files = document.getElementById('imageFile')?.files || [];
+        const format = document.getElementById('format')?.value || '';
+        const quality = document.getElementById('quality')?.value || '';
+        if(!files.length){ alert('Пожалуйста, выберите файлы.'); output.innerHTML=''; return; }
+
+        const formData = new FormData();
+        for(let i=0;i<files.length;i++) formData.append('file', files[i]);
+        formData.append('format', format);
+        formData.append('quality', quality);
+
+        try{
+            const res = await fetch("{{ url_for('api.image.convert') }}", { method: 'POST', body: formData });
+            if(!res.ok) throw new Error('Сервер вернул ' + res.status);
+
+            const contentType = res.headers.get('content-type') || '';
+            const disp = res.headers.get('content-disposition') || '';
+            let filename = '';
+            const cdMatch = disp.match(/filename\*=UTF-8''([^;\n]+)/i) || disp.match(/filename="?([^";\n]+)"?/i);
+            if(cdMatch) filename = decodeURIComponent(cdMatch[1]);
+
+            const blob = await res.blob();
+            if(!filename){
+                if(files.length > 1) filename = 'converted_images.zip';
+                else filename = 'converted.' + (format==='jpeg' ? 'jpg' : format || 'bin');
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.textContent = 'Скачать ' + filename;
+            output.innerHTML = '';
+            output.appendChild(a);
+
+            // auto-click to start download
+            try{ a.click(); }catch(e){}
+        }catch(err){
+            output.innerHTML = '<pre>' + (err.message || err) + '</pre>';
+        }
+    });
+});
+</script>
+{% endblock %}

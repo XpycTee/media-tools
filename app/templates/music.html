@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Audio Track Compiler{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">{% endblock %}
+
+{% block body_class %}music-page{% endblock %}
+
+{% block content %}
+<div class="app">
+    <div class="form-container">
+        <label>Аудио файл</label>
+        <div class="file-drop" id="audioDrop"><span id="audioDropText">Перетащите файл сюда или кликните</span><input type="file" id="audioFile" accept="audio/*" /></div>
+        <label>Обложка</label>
+        <div class="file-drop" id="coverDrop"><span id="coverDropText">Перетащите файл сюда или кликните</span><input type="file" id="coverFile" accept="image/*" /></div>
+        <label for="title">Название трека</label>
+        <input type="text" id="title" placeholder="Название" />
+        <label for="artist">Исполнитель</label>
+        <input type="text" id="artist" placeholder="Автор" />
+
+        <div class="optional-metadata">
+            <div class="optional-header" onclick="toggleOptional()">Дополнительные метаданные ▼</div>
+            <div class="optional-fields" id="optionalFields">
+                <input type="text" id="album" placeholder="Альбом" />
+                <input type="text" id="genre" placeholder="Жанры" />
+                <input type="text" id="comment" placeholder="Комментарий" />
+                <input type="text" id="year" placeholder="Год" />
+            </div>
+        </div>
+        <button class="submit-btn" onclick="submitForm()">Скомпилировать</button>
+
+        <div class="output" id="output"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    setupDragDrop('audioDrop','audioFile','audioDropText');
+    setupDragDrop('coverDrop','coverFile','coverDropText');
+});
+async function submitForm() {
+    const audioFile = document.getElementById('audioFile')?.files[0];
+    const coverFile = document.getElementById('coverFile')?.files[0];
+    const title = document.getElementById('title')?.value;
+    const artist = document.getElementById('artist')?.value;
+    const genre = document.getElementById('genre')?.value;
+    const album = document.getElementById('album')?.value;
+    const comment = document.getElementById('comment')?.value;
+    const year = document.getElementById('year')?.value;
+
+    if (!audioFile || !coverFile || !title || !artist) {
+        alert('Пожалуйста, заполните все обязательные поля и выберите файлы.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('audio', audioFile);
+    formData.append('cover', coverFile);
+    formData.append('title', title);
+    formData.append('artist', artist);
+    formData.append('album', album);
+    formData.append('genre', genre);
+    formData.append('comment', comment);
+    formData.append('year', year);
+
+    try {
+        const response = await fetch("{{ url_for('api.track.compile') }}", {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error('Ошибка сервера');
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const output = document.getElementById('output');
+        output.innerHTML = `<a href="${url}" download="${title} - ${artist}.mp3">Скачать скомпилированный трек</a>`;
+    } catch (err) {
+        alert('Ошибка при отправке: ' + err.message);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+.app { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+.form-container { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; width: 400px; display: flex; flex-direction: column; gap: 12px; }
+.form-container select, 
+.form-container input[type=number], 
+.form-container input[type=text] { 
+    width: 100%; padding: 8px; border-radius: 6px; border: none; font-size: 14px; 
+}
+.form-container div { flex-direction: column; gap: 12px; }
+
+/* Ensure selects, numeric inputs and visible file inputs fill the form and have spacing */
+select,
+input[type=number],
+input[type=file],
+input[type=text] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+label { font-size: 13px; color: #cbd5e1; }
+.hint { font-size: 12px; color: #94a3b8; }
+
+/* Make submit buttons full-width like on music page */
+.submit-btn { width: 100%; display: inline-block; }
+.file-drop { position: relative; border: 2px dashed #475569; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: background 0.2s; }
+.file-drop.hover { background: #334155; }
+.file-drop input { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+.submit-btn { padding: 10px; background: #16a34a; border: none; color: white; cursor: pointer; border-radius: 8px; font-size: 16px; }
+.submit-btn:hover { background: #15803d; }
+.hidden { display: none; }
+.optional-metadata { border: 1px solid #475569; border-radius: 8px; padding: 10px; }
+.optional-header { cursor: pointer; background: #334155; padding: 6px 10px; border-radius: 6px; }
+.optional-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, margin-top 0.3s ease; }
+.optional-fields.expanded { max-height: 500px; margin-top: 8px; }
