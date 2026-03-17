@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
 {% block title %}Конвертер изображений{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/pages/image.css') }}">{% endblock %}
 
 
 {% block body_class %}image-page{% endblock %}
 
 {% block content %}
-<div class="app">
-    <div class="form-container">
-        <label for="imageFile">Файлы</label>
-        <div class="file-drop" id="imageDrop">
+<div class="app layout-app">
+    <div class="form-container panel panel-form">
+        <label class="form-label" for="imageFile">Файлы</label>
+        <div class="file-drop dropzone" id="imageDrop">
             <span id="imageDropText">Перетащите файлы сюда или кликните</span>
             <input type="file" id="imageFile" name="file" multiple accept="image/*" />
         </div>
-        <div class="hint">Поддерживаются форматы: PNG, JPG, GIF, TIFF, HEIF/AVIF (при наличии поддержки).</div>
+        <div class="hint form-hint">Поддерживаются форматы: PNG, JPG, GIF, TIFF, HEIF/AVIF (при наличии поддержки).</div>
 
-        <label for="format">Формат назначения:</label>
+        <label class="form-label" for="format">Формат назначения:</label>
         <select id="format" name="format">
             <option value="jpeg">JPEG</option>
             <option value="png">PNG</option>
@@ -28,14 +28,14 @@
             <option value="bmp">BMP</option>
         </select>
 
-        <div id="qualityBox" class="field-container">
-            <label for="quality">Качество (для JPEG/WEBP):</label>
+        <div id="qualityBox" class="field-container u-flex-col">
+            <label class="form-label" for="quality">Качество (для JPEG/WEBP):</label>
             <input type="number" id="quality" name="quality" min="1" max="100" value="85">
         </div>
 
-        <button type="button" id="convertBtn" class="submit-btn">Конвертировать</button>
+        <button type="button" id="convertBtn" class="submit-btn btn btn--success">Конвертировать</button>
 
-        <div class="output" id="output"></div>
+        <div class="output log-panel" id="output"></div>
     </div>
 </div>
 

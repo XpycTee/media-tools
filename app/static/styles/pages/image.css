@@ -1,0 +1,16 @@
+.image-page .layout-app,
+.image-page .app {
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.image-page .panel-form,
+.image-page .form-container {
+  width: min(100%, 460px);
+}
+
+.image-page #qualityBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

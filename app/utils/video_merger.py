@@ -1,6 +1,7 @@
-from environs import Env
-
 import os
+import subprocess
+
+from environs import Env
 
 env = Env()
 env.read_env()
@@ -50,7 +51,7 @@ def find_file(filename):
     return matches[0][1]
 
 
-def build_ffmpeg_command(video_file, audios, subtitles):
+def build_ffmpeg_command(video_file, audios, subtitles, output_file=None):
     """
     Создаём команду ffmpeg для объединения видео, аудио и субтитров.
     Оригинальная аудио дорожка (если есть) добавляется последней.
@@ -77,8 +78,43 @@ def build_ffmpeg_command(video_file, audios, subtitles):
     for idx, sub in enumerate(subtitles):
         metadata_args.extend([f"-metadata:s:s:{idx}", f"title={sub['name']}"])
 
-    dir_name = os.path.dirname(video_file)
-    base_name = os.path.basename(video_file)
-    output_file = os.path.join(dir_name, f"muxed_{base_name}")
+    if not output_file:
+        dir_name = os.path.dirname(video_file)
+        base_name = os.path.basename(video_file)
+        output_file = os.path.join(dir_name, f"muxed_{base_name}")
     final_cmd = cmd + map_args + metadata_args + ["-c:v", "copy", "-c:a", "copy", "-c:s", "copy", output_file]
     return final_cmd, output_file
+
+
+def build_ffmpeg_progress_command(video_file, audios, subtitles, output_file=None):
+    """Создаём команду ffmpeg c machine-readable прогрессом в stdout."""
+    cmd, output_file = build_ffmpeg_command(video_file, audios, subtitles, output_file=output_file)
+    # Global options for progress reporting.
+    progress_flags = ["-nostats", "-progress", "pipe:1"]
+    cmd = [cmd[0]] + progress_flags + cmd[1:]
+    return cmd, output_file
+
+
+def get_media_duration_ms(file_path):
+    """Возвращает длительность медиафайла в миллисекундах через ffprobe."""
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        file_path,
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        return None
+
+    value = (proc.stdout or "").strip()
+    if not value:
+        return None
+    try:
+        return max(1, int(float(value) * 1000))
+    except ValueError:
+        return None

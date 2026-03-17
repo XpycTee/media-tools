@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}PDF Компилер{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='pdf.css') }}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/pages/pdf.css') }}">{% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='javascript/utils/pdf.min.js') }}"></script>
@@ -11,13 +11,13 @@
 {% block body_class %}pdf-page{% endblock %}
 
 {% block content %}
-<div class="app">
-    <div class="controls">
-        <button onclick="addUploadButton('pdf')">+ PDF файлы</button>
-        <button onclick="addUploadButton('images')">+ Изображения</button>
-        <button class="compile-btn" onclick="compilePdf()">Объединить</button>
-        <button class="split-btn" onclick="splitPdf()">Разделить PDF</button>
-        <button class="compress-btn" onclick="openCompressModal()">Сжать PDF</button>
+<div class="app layout-app">
+    <div class="controls toolbar">
+        <button class="btn btn--primary" onclick="addUploadButton('pdf')">+ PDF файлы</button>
+        <button class="btn btn--primary" onclick="addUploadButton('images')">+ Изображения</button>
+        <button class="compile-btn btn btn--success" onclick="compilePdf()">Объединить</button>
+        <button class="split-btn btn btn--warning" onclick="splitPdf()">Разделить PDF</button>
+        <button class="compress-btn btn btn--accent" onclick="openCompressModal()">Сжать PDF</button>
     </div>
     <div class="pdf-pages-container" id="pdf-pages">
         <div class="drop-hint">
@@ -32,19 +32,19 @@
 <div id="pageViewerModal" class="modal fullscreen-modal">
     <div class="modal-content fullscreen-content">
         <div class="zoom-controls">
-            <button class="zoom-btn" onclick="zoomOut()" id="zoomOutBtn" title="Уменьшить">−</button>
+            <button class="zoom-btn btn btn--primary" onclick="zoomOut()" id="zoomOutBtn" title="Уменьшить">−</button>
             <span class="zoom-level" id="zoomLevel">100%</span>
-            <button class="zoom-btn" onclick="zoomIn()" id="zoomInBtn" title="Увеличить">+</button>
-            <button class="zoom-btn reset-btn" onclick="resetZoom()" title="Сбросить">1:1</button>
-            <button class="close-btn" onclick="closePageViewer()">&times;</button>
+            <button class="zoom-btn btn btn--primary" onclick="zoomIn()" id="zoomInBtn" title="Увеличить">+</button>
+            <button class="zoom-btn reset-btn btn btn--accent" onclick="resetZoom()" title="Сбросить">1:1</button>
+            <button class="close-btn btn btn--danger" onclick="closePageViewer()">&times;</button>
         </div>
         <div class="page-viewer-container">
             <div id="pageViewerContent" class="page-viewer-content"></div>
         </div>
         <div class="page-nav-controls">
-            <button class="nav-btn" onclick="previousPage()" id="prevBtn">← Предыдущая</button>
+            <button class="nav-btn btn btn--primary" onclick="previousPage()" id="prevBtn">← Предыдущая</button>
             <span class="page-counter" id="pageCounter">1 / 1</span>
-            <button class="nav-btn" onclick="nextPage()" id="nextBtn">Следующая →</button>
+            <button class="nav-btn btn btn--primary" onclick="nextPage()" id="nextBtn">Следующая →</button>
         </div>
     </div>
 </div>
@@ -56,14 +56,14 @@
         <h2>Параметры сжатия PDF</h2>
         <div class="modal-form">
             <div class="form-group">
-                <label for="qualityInput">Качество изображений (1-100):</label>
+                <label class="form-label" for="qualityInput">Качество изображений (1-100):</label>
                 <input type="number" id="qualityInput" min="1" max="100" value="75">
             </div>
             <div class="form-group">
-                <label for="resizeInput">Размер изображений (% от оригинала):</label>
+                <label class="form-label" for="resizeInput">Размер изображений (% от оригинала):</label>
                 <input type="number" id="resizeInput" min="10" max="100" value="100">
             </div>
-            <button class="modal-btn" onclick="compressPdf()">Сжать</button>
+            <button class="modal-btn btn btn--accent" onclick="compressPdf()">Сжать</button>
         </div>
     </div>
 </div>

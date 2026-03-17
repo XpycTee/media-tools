@@ -3,3 +3,5 @@ environs
 pillow
 pillow_heif
 pypdf
+pywebview
+pyinstaller

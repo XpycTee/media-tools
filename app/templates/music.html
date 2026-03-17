@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
 {% block title %}Audio Track Compiler{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/pages/music.css') }}">{% endblock %}
 
 {% block body_class %}music-page{% endblock %}
 
 {% block content %}
-<div class="app">
-    <div class="form-container">
-        <label>Аудио файл</label>
-        <div class="file-drop" id="audioDrop"><span id="audioDropText">Перетащите файл сюда или кликните</span><input type="file" id="audioFile" accept="audio/*" /></div>
-        <label>Обложка</label>
-        <div class="file-drop" id="coverDrop"><span id="coverDropText">Перетащите файл сюда или кликните</span><input type="file" id="coverFile" accept="image/*" /></div>
-        <label for="title">Название трека</label>
+<div class="app layout-app">
+    <div class="form-container panel panel-form">
+        <label class="form-label">Аудио файл</label>
+        <div class="file-drop dropzone" id="audioDrop"><span id="audioDropText">Перетащите файл сюда или кликните</span><input type="file" id="audioFile" accept="audio/*" /></div>
+        <label class="form-label">Обложка</label>
+        <div class="file-drop dropzone" id="coverDrop"><span id="coverDropText">Перетащите файл сюда или кликните</span><input type="file" id="coverFile" accept="image/*" /></div>
+        <label class="form-label" for="title">Название трека</label>
         <input type="text" id="title" placeholder="Название" />
-        <label for="artist">Исполнитель</label>
+        <label class="form-label" for="artist">Исполнитель</label>
         <input type="text" id="artist" placeholder="Автор" />
 
         <div class="optional-metadata">
@@ -26,9 +26,9 @@
                 <input type="text" id="year" placeholder="Год" />
             </div>
         </div>
-        <button class="submit-btn" onclick="submitForm()">Скомпилировать</button>
+        <button class="submit-btn btn btn--success" onclick="submitForm()">Скомпилировать</button>
 
-        <div class="output" id="output"></div>
+        <div class="output log-panel" id="output"></div>
     </div>
 </div>
 

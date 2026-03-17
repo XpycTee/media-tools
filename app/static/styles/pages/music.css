@@ -1,0 +1,15 @@
+.music-page .layout-app,
+.music-page .app {
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.music-page .panel-form,
+.music-page .form-container {
+  width: min(100%, 440px);
+}
+
+.music-page .log-panel,
+.music-page .output {
+  min-height: 44px;
+}
