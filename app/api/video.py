@@ -10,6 +10,7 @@ from app.utils.video_merger import (
     build_ffmpeg_progress_command,
     find_file,
     get_media_duration_ms,
+    is_video_root_configured,
 )
 
 
@@ -124,6 +125,9 @@ def _resolve_output_file(video_path, output_target):
 
 
 def _process_single_video(video_key, streams, progress_cb, output_target=None):
+    if not is_video_root_configured():
+        return "VIDEO_ROOT is not configured. Set VIDEO_ROOT in the environment before using the Video module."
+
     video_path = find_file(video_key)
     if not video_path:
         return "Video file not found"

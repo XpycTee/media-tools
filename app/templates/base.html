@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %}</title>
+    <script>
+        (function() {
+            const storageKey = "theme";
+            const root = document.documentElement;
+
+            function getSystemTheme() {
+                return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+                    ? "light"
+                    : "dark";
+            }
+
+            try {
+                const storedTheme = window.localStorage.getItem(storageKey);
+                root.dataset.theme = storedTheme === "light" || storedTheme === "dark"
+                    ? storedTheme
+                    : getSystemTheme();
+            } catch (error) {
+                root.dataset.theme = getSystemTheme();
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     {% block styles %}{% endblock %}
     <script src="{{ url_for('static', filename='javascript/utils/Sortable.min.js') }}"></script>
@@ -17,6 +38,13 @@
         <a class="btn btn--primary menu-link" href="/track">Track</a>
         <a class="btn btn--primary menu-link" href="/image">Image</a>
         <a class="btn btn--primary menu-link" href="/pdf">PDF</a>
+    </div>
+    <div class="theme-switch" aria-label="Переключатель темы">
+        <span class="theme-switch__label">Тема</span>
+        <div class="theme-switch__control" role="group" aria-label="Выбор темы">
+            <button class="theme-switch__button" type="button" data-theme-option="dark" aria-pressed="false">Тёмная</button>
+            <button class="theme-switch__button" type="button" data-theme-option="light" aria-pressed="false">Светлая</button>
+        </div>
     </div>
 </header>
 {% block content %}{% endblock %}

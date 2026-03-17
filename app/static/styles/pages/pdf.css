@@ -26,7 +26,7 @@
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--color-page-grid-bg);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
@@ -34,7 +34,7 @@
 }
 
 .pdf-pages-container.drag-over {
-  background-color: rgba(37, 99, 235, 0.15);
+  background-color: var(--color-focus-ring);
   border-style: dashed;
   border-color: var(--color-primary);
 }
@@ -64,12 +64,12 @@
 
 .drop-hint-subtext {
   font-size: var(--font-size-md);
-  color: #64748b;
+  color: var(--color-text-dim);
 }
 
 .pdf-page-item {
   position: relative;
-  background: #fff;
+  background: var(--color-page-item-bg);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -88,7 +88,7 @@
 
 .pdf-page-item:hover {
   border-color: var(--color-border-soft);
-  box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+  box-shadow: var(--color-page-item-shadow);
 }
 
 .pdf-page-item img,
@@ -102,8 +102,8 @@
   position: absolute;
   bottom: var(--space-1);
   right: var(--space-2);
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  background: var(--color-page-badge-bg);
+  color: var(--color-page-badge-text);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
@@ -129,7 +129,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--color-fullscreen-overlay);
 }
 
 .fullscreen-modal.active {
@@ -145,7 +145,7 @@
   border-radius: 0;
   display: flex;
   flex-direction: column;
-  background: #0f0f0f;
+  background: var(--color-fullscreen-surface);
   min-height: 0;
 }
 

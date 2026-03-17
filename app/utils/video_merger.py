@@ -1,13 +1,39 @@
 import os
 import subprocess
+from pathlib import Path
 
-from environs import Env
+def get_base_folder():
+    """Возвращает корневую папку медиа или None, если VIDEO_ROOT не задан."""
+    raw_value = os.environ.get("VIDEO_ROOT", "").strip()
+    if not raw_value:
+        raw_value = _read_video_root_from_env_file()
+    if not raw_value:
+        return None
+    return Path(raw_value).expanduser()
 
-env = Env()
-env.read_env()
 
-# Папка, где ищем видео, аудио и субтитры
-BASE_FOLDER = env.path("VIDEO_ROOT")
+def _read_video_root_from_env_file():
+    env_path = Path.cwd() / ".env"
+    if not env_path.exists():
+        return ""
+
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            raw_line = line.strip()
+            if not raw_line or raw_line.startswith("#") or "=" not in raw_line:
+                continue
+            key, value = raw_line.split("=", 1)
+            if key.strip() == "VIDEO_ROOT":
+                return value.strip().strip("'\"")
+    except OSError:
+        return ""
+
+    return ""
+
+
+def is_video_root_configured():
+    return get_base_folder() is not None
+
 
 def find_file(filename):
     """Ищем файл по абсолютному/относительному пути или рекурсивно в BASE_FOLDER.
@@ -20,22 +46,29 @@ def find_file(filename):
        вернуть совпадение чей относительный путь заканчивается на переданный filename.
     4. Иначе вернуть первый найденный файл с таким basename.
     """
+    base_folder = get_base_folder()
+
     # Absolute path provided
     if os.path.isabs(filename) and os.path.exists(filename):
         return filename
 
+    if base_folder is None:
+        return None
+
+    base_folder_str = str(base_folder)
+
     # Try joining BASE_FOLDER with provided filename (handles relative paths)
-    candidate = os.path.join(BASE_FOLDER, filename)
+    candidate = os.path.join(base_folder_str, filename)
     if os.path.exists(candidate):
         return candidate
 
     # Fallback: search by basename and try to prefer matching relative path
     target_basename = os.path.basename(filename)
     matches = []
-    for root, dirs, files in os.walk(BASE_FOLDER):
+    for root, dirs, files in os.walk(base_folder_str):
         if target_basename in files:
             full = os.path.join(root, target_basename)
-            rel = os.path.relpath(full, BASE_FOLDER)
+            rel = os.path.relpath(full, base_folder_str)
             matches.append((rel, full))
 
     if not matches:
