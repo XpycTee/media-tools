@@ -192,6 +192,7 @@ cython_debug/
 .DS_Store
 **/.DS_Store
 __pycache__/
+figma/
 
 # Ruff stuff:
 .ruff_cache/
