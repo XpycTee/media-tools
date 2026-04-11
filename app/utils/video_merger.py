@@ -53,20 +53,27 @@ def find_file(filename):
     4. Иначе вернуть первый найденный файл с таким basename.
     """
     import sys
+    print(f"[DEBUG find_file] Поиск файла: {filename}", file=sys.stderr)
     base_folder = get_base_folder()
     is_desktop = os.environ.get("APP_MODE", "").strip().lower() == "desktop"
+    print(f"[DEBUG find_file] base_folder: {base_folder}, is_desktop: {is_desktop}", file=sys.stderr)
 
     # Absolute path provided
     if os.path.isabs(filename):
+        print(f"[DEBUG find_file] Абсолютный путь: {filename}", file=sys.stderr)
         if os.path.exists(filename):
+            print(f"[DEBUG find_file] Файл существует, возвращаем", file=sys.stderr)
             return filename
         # В десктопном режиме можно попробовать найти файл относительно текущей директории
         if is_desktop:
             # Попробуем относительный путь от текущей директории
             candidate = os.path.join(os.getcwd(), filename)
+            print(f"[DEBUG find_file] Проверяем кандидата: {candidate}", file=sys.stderr)
             if os.path.exists(candidate):
+                print(f"[DEBUG find_file] Кандидат существует, возвращаем", file=sys.stderr)
                 return candidate
         # Файл не найден
+        print(f"[DEBUG find_file] Абсолютный путь не найден", file=sys.stderr)
         return None
 
     if base_folder is None:
@@ -74,18 +81,23 @@ def find_file(filename):
         if is_desktop:
             base_folder = Path.cwd()
         else:
+            print(f"[DEBUG find_file] base_folder is None и не десктоп, возвращаем None", file=sys.stderr)
             return None
 
     base_folder_str = str(base_folder)
+    print(f"[DEBUG find_file] base_folder_str: {base_folder_str}", file=sys.stderr)
 
     # Try joining BASE_FOLDER with provided filename (handles relative paths)
     candidate = os.path.join(base_folder_str, filename)
+    print(f"[DEBUG find_file] Кандидат после join: {candidate}", file=sys.stderr)
     if os.path.exists(candidate):
+        print(f"[DEBUG find_file] Кандидат существует, возвращаем", file=sys.stderr)
         return candidate
 
     # Fallback: search by basename and try to prefer matching relative path
     target_basename = os.path.basename(filename)
     matches = []
+    print(f"[DEBUG find_file] Ищем по basename: {target_basename}", file=sys.stderr)
     for root, dirs, files in os.walk(base_folder_str):
         if target_basename in files:
             full = os.path.join(root, target_basename)
@@ -93,15 +105,19 @@ def find_file(filename):
             matches.append((rel, full))
 
     if not matches:
+        print(f"[DEBUG find_file] Совпадений не найдено, возвращаем None", file=sys.stderr)
         return None
 
+    print(f"[DEBUG find_file] Найдено совпадений: {len(matches)}", file=sys.stderr)
     # If a path-like filename was provided, try to find a match whose relative path endswith it
     norm_filename = filename.replace('\\', '/').lstrip('./')
     for rel, full in matches:
         if rel.replace('\\', '/').endswith(norm_filename):
+            print(f"[DEBUG find_file] Найдено точное совпадение по относительному пути: {full}", file=sys.stderr)
             return full
 
     # Otherwise return the first match
+    print(f"[DEBUG find_file] Возвращаем первое совпадение: {matches[0][1]}", file=sys.stderr)
     return matches[0][1]
 
 

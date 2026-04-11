@@ -106,37 +106,77 @@ def _run_ffmpeg_with_progress(cmd, duration_ms, progress_cb):
     return tail or f"ffmpeg exited with code {return_code}"
 
 def _resolve_output_file(video_path, output_target):
+    import sys
     if not isinstance(output_target, dict):
+        print(f"[DEBUG _resolve_output_file] output_target не dict: {output_target}", file=sys.stderr)
         return None
 
     raw_path = output_target.get("path")
     if not raw_path:
+        print(f"[DEBUG _resolve_output_file] path отсутствует", file=sys.stderr)
         return None
 
     selection_kind = output_target.get("selection_kind")
+    print(f"[DEBUG _resolve_output_file] raw_path={raw_path}, selection_kind={selection_kind}", file=sys.stderr)
     if selection_kind == "file":
+        print(f"[DEBUG _resolve_output_file] возвращаем файл: {raw_path}", file=sys.stderr)
         return raw_path
 
     if selection_kind == "directory":
         base_name = os.path.basename(video_path)
-        return os.path.join(raw_path, f"muxed_{base_name}")
+        result = os.path.join(raw_path, f"muxed_{base_name}")
+        print(f"[DEBUG _resolve_output_file] директория, результат: {result}", file=sys.stderr)
+        return result
 
+    print(f"[DEBUG _resolve_output_file] неизвестный selection_kind, возвращаем raw_path", file=sys.stderr)
     return raw_path
 
 
 def _process_single_video(video_key, streams, progress_cb, output_target=None):
+    import sys
+    import os
+    print(f"[DEBUG _process_single_video] Начало обработки видео: video_key={video_key}", file=sys.stderr)
+    print(f"[DEBUG _process_single_video] streams={streams}", file=sys.stderr)
+    print(f"[DEBUG _process_single_video] output_target={output_target}", file=sys.stderr)
     if not is_video_root_configured():
+        print(f"[DEBUG _process_single_video] VIDEO_ROOT не сконфигурирован", file=sys.stderr)
         return "VIDEO_ROOT is not configured. Set VIDEO_ROOT in the environment before using the Video module."
 
     video_path = find_file(video_key)
     if not video_path:
-        return "Video file not found"
+        # Попробуем найти файл в директории output_target, если это директория
+        if output_target and isinstance(output_target, dict):
+            output_path = output_target.get("path")
+            selection_kind = output_target.get("selection_kind")
+            if selection_kind == "directory" and output_path:
+                # Предполагаем, что видеофайлы находятся в родительской директории output_path
+                parent_dir = os.path.dirname(output_path.rstrip('/'))
+                candidate = os.path.join(parent_dir, video_key)
+                print(f"[DEBUG _process_single_video] Пробуем кандидата из output_target: {candidate}", file=sys.stderr)
+                if os.path.exists(candidate):
+                    video_path = candidate
+                    print(f"[DEBUG _process_single_video] Видеофайл найден через output_target: {video_path}", file=sys.stderr)
+                else:
+                    # Может быть, видеофайлы находятся в самой output_path (директории muxed)
+                    candidate2 = os.path.join(output_path, video_key)
+                    print(f"[DEBUG _process_single_video] Пробуем кандидата в output_path: {candidate2}", file=sys.stderr)
+                    if os.path.exists(candidate2):
+                        video_path = candidate2
+                        print(f"[DEBUG _process_single_video] Видеофайл найден в output_path: {video_path}", file=sys.stderr)
+        if not video_path:
+            print(f"[DEBUG _process_single_video] Видеофайл не найден: {video_key}", file=sys.stderr)
+            return "Video file not found"
+    print(f"[DEBUG _process_single_video] Видеофайл найден: {video_path}", file=sys.stderr)
 
     audio_files = []
     for audio in streams.get("audio", []):
-        path = find_file(audio.get("file", ""))
+        audio_file_key = audio.get("file", "")
+        print(f"[DEBUG _process_single_video] Ищем аудио файл: {audio_file_key}", file=sys.stderr)
+        path = find_file(audio_file_key)
         if not path:
+            print(f"[DEBUG _process_single_video] Аудио файл не найден: {audio_file_key}", file=sys.stderr)
             return f"Audio file {audio.get('file')} not found"
+        print(f"[DEBUG _process_single_video] Аудио файл найден: {path}", file=sys.stderr)
         audio_files.append({"name": audio.get("name", ""), "file": path})
 
     # Добавляем оригинальную дорожку последней.
@@ -144,22 +184,32 @@ def _process_single_video(video_key, streams, progress_cb, output_target=None):
 
     subtitle_files = []
     for sub in streams.get("subtitles", []):
-        path = find_file(sub.get("file", ""))
+        sub_file_key = sub.get("file", "")
+        print(f"[DEBUG _process_single_video] Ищем субтитры: {sub_file_key}", file=sys.stderr)
+        path = find_file(sub_file_key)
         if not path:
+            print(f"[DEBUG _process_single_video] Субтитры не найдены: {sub_file_key}", file=sys.stderr)
             return f"Subtitle file {sub.get('file')} not found"
+        print(f"[DEBUG _process_single_video] Субтитры найдены: {path}", file=sys.stderr)
         subtitle_files.append({"name": sub.get("name", ""), "file": path})
 
+    import sys
     duration_ms = get_media_duration_ms(video_path)
+    print(f"[DEBUG _process_single_video] Длительность видео: {duration_ms} мс", file=sys.stderr)
     output_file = _resolve_output_file(video_path, output_target)
+    print(f"[DEBUG _process_single_video] output_file: {output_file}", file=sys.stderr)
     cmd, output_file = build_ffmpeg_progress_command(
         video_path,
         audio_files,
         subtitle_files,
         output_file=output_file,
     )
+    print(f"[DEBUG _process_single_video] Команда ffmpeg построена, выходной файл: {output_file}", file=sys.stderr)
     ffmpeg_error = _run_ffmpeg_with_progress(cmd, duration_ms, progress_cb)
     if ffmpeg_error:
+        print(f"[DEBUG _process_single_video] Ошибка ffmpeg: {ffmpeg_error}", file=sys.stderr)
         return f"FFmpeg error: {ffmpeg_error}"
+    print(f"[DEBUG _process_single_video] Успешно создан: {output_file}", file=sys.stderr)
     return f"Created {output_file}"
 
 
