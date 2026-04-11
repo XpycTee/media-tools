@@ -4,6 +4,9 @@ from pathlib import Path
 
 def get_base_folder():
     """Возвращает корневую папку медиа или None, если VIDEO_ROOT не задан."""
+    # В десктопном режиме VIDEO_ROOT не требуется, пути абсолютные
+    if os.environ.get("APP_MODE", "").strip().lower() == "desktop":
+        return None
     raw_value = os.environ.get("VIDEO_ROOT", "").strip()
     if not raw_value:
         raw_value = _read_video_root_from_env_file()
@@ -32,6 +35,9 @@ def _read_video_root_from_env_file():
 
 
 def is_video_root_configured():
+    # В десктопном режиме VIDEO_ROOT не требуется
+    if os.environ.get("APP_MODE", "").strip().lower() == "desktop":
+        return True
     return get_base_folder() is not None
 
 
@@ -46,14 +52,29 @@ def find_file(filename):
        вернуть совпадение чей относительный путь заканчивается на переданный filename.
     4. Иначе вернуть первый найденный файл с таким basename.
     """
+    import sys
     base_folder = get_base_folder()
+    is_desktop = os.environ.get("APP_MODE", "").strip().lower() == "desktop"
 
     # Absolute path provided
-    if os.path.isabs(filename) and os.path.exists(filename):
-        return filename
+    if os.path.isabs(filename):
+        if os.path.exists(filename):
+            return filename
+        # В десктопном режиме можно попробовать найти файл относительно текущей директории
+        if is_desktop:
+            # Попробуем относительный путь от текущей директории
+            candidate = os.path.join(os.getcwd(), filename)
+            if os.path.exists(candidate):
+                return candidate
+        # Файл не найден
+        return None
 
     if base_folder is None:
-        return None
+        # В десктопном режиме используем текущую директорию как базовую
+        if is_desktop:
+            base_folder = Path.cwd()
+        else:
+            return None
 
     base_folder_str = str(base_folder)
 
