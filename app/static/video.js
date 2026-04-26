@@ -536,6 +536,22 @@ document.addEventListener("DOMContentLoaded", () => {
   if (closeBtn) {
     closeBtn.addEventListener("click", closeProgressOverlay);
   }
+
+  // В десктопном режиме заменяем input для видео на кнопку, как для аудио/субтитров
+  if (isDesktopMode()) {
+    const videoColumn = document.querySelector('.column[data-type="video"]');
+    if (videoColumn) {
+      const label = videoColumn.querySelector('.upload-label');
+      if (label) {
+        // Создаём контейнер с кнопкой, идентичный тому, что используется для аудио/субтитров
+        const newContainer = document.createElement('div');
+        newContainer.className = 'video-upload-actions video-upload-actions--single';
+        newContainer.innerHTML = '<button class="btn-upload video-upload-button" type="button" onclick="openDesktopPicker(\'video\', \'video-column\')">Загрузить видео</button>';
+        // Заменяем label на новый контейнер
+        label.replaceWith(newContainer);
+      }
+    }
+  }
 });
 
 window.handleVideoFiles = handleVideoFiles;
