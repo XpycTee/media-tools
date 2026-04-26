@@ -336,6 +336,14 @@ function normalizeBrowserFiles(fileList, columnType, selectionKind) {
 }
 
 function handleVideoFiles(event, columnId) {
+  // В десктопном режиме используем диалог выбора файлов
+  if (hasDesktopPicker()) {
+    event.preventDefault();
+    openDesktopPicker("video", columnId);
+    // Сброс значения input, чтобы можно было выбрать те же файлы снова
+    event.target.value = "";
+    return;
+  }
   const columnContent = document.getElementById(columnId);
   if (!columnContent) return;
   const payload = normalizeBrowserFiles(event.target.files, "video", "file");
@@ -417,7 +425,11 @@ function removeColumn(button) {
 }
 
 function askDesktopSelectionKind(type) {
-  const label = type === "audio" ? "озвучки" : "субтитров";
+  let label;
+  if (type === "audio") label = "озвучки";
+  else if (type === "subtitle") label = "субтитров";
+  else if (type === "video") label = "видео";
+  else label = "файлов";
   const pickDirectory = window.confirm(
     `Выбрать папку для ${label}?\n\nНажмите OK для папки или Cancel для выбора файла.`
   );

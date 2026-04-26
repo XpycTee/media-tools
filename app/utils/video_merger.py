@@ -98,11 +98,13 @@ def find_file(filename):
     target_basename = os.path.basename(filename)
     matches = []
     print(f"[DEBUG find_file] Ищем по basename: {target_basename}", file=sys.stderr)
+    print(f"[DEBUG find_file] Сканируем директорию: {base_folder_str}", file=sys.stderr)
     for root, dirs, files in os.walk(base_folder_str):
         if target_basename in files:
             full = os.path.join(root, target_basename)
             rel = os.path.relpath(full, base_folder_str)
             matches.append((rel, full))
+            print(f"[DEBUG find_file] Найдено совпадение в: {full}", file=sys.stderr)
 
     if not matches:
         print(f"[DEBUG find_file] Совпадений не найдено, возвращаем None", file=sys.stderr)

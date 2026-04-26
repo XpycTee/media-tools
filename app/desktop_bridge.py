@@ -5,6 +5,7 @@ from pathlib import Path
 ALLOWED_EXTENSIONS = {
     "audio": {".mka"},
     "subtitle": {".srt", ".ass", ".vtt"},
+    "video": {".mkv"},
 }
 
 
@@ -149,4 +150,6 @@ class DesktopBridge:
             return ["Audio tracks (*.mka)"]
         if media_type == "subtitle":
             return ["Subtitle files (*.srt;*.ass;*.vtt)"]
+        if media_type == "video":
+            return ["Video files (*.mkv)"]
         return []
