@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 def get_base_folder():
@@ -128,7 +129,8 @@ def build_ffmpeg_command(video_file, audios, subtitles, output_file=None):
     Создаём команду ffmpeg для объединения видео, аудио и субтитров.
     Оригинальная аудио дорожка (если есть) добавляется последней.
     """
-    cmd = ["ffmpeg", "-i", video_file]
+    ffmpeg_cmd = get_ffmpeg_path()
+    cmd = [ffmpeg_cmd, "-i", video_file]
     # Добавляем аудио дорожки
     for audio in audios:
         cmd.extend(["-i", audio['file']])
@@ -167,10 +169,44 @@ def build_ffmpeg_progress_command(video_file, audios, subtitles, output_file=Non
     return cmd, output_file
 
 
+def get_ffprobe_path():
+    """Возвращает путь к ffprobe, учитывая бандл PyInstaller."""
+    # Если мы в собранном приложении PyInstaller
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # В macOS бандле бинарники помещаются в Resources/bin/
+        # Путь зависит от структуры бандла
+        bundle_bin_dir = os.path.join(sys._MEIPASS, 'bin')
+        ffprobe_path = os.path.join(bundle_bin_dir, 'ffprobe')
+        if os.path.exists(ffprobe_path):
+            return ffprobe_path
+        # Альтернативный путь для macOS .app
+        resources_dir = os.path.join(sys._MEIPASS, '..', 'Resources', 'bin')
+        ffprobe_path = os.path.join(resources_dir, 'ffprobe')
+        if os.path.exists(ffprobe_path):
+            return ffprobe_path
+    # Иначе используем ffprobe из PATH
+    return "ffprobe"
+
+
+def get_ffmpeg_path():
+    """Возвращает путь к ffmpeg, учитывая бандл PyInstaller."""
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        bundle_bin_dir = os.path.join(sys._MEIPASS, 'bin')
+        ffmpeg_path = os.path.join(bundle_bin_dir, 'ffmpeg')
+        if os.path.exists(ffmpeg_path):
+            return ffmpeg_path
+        resources_dir = os.path.join(sys._MEIPASS, '..', 'Resources', 'bin')
+        ffmpeg_path = os.path.join(resources_dir, 'ffmpeg')
+        if os.path.exists(ffmpeg_path):
+            return ffmpeg_path
+    return "ffmpeg"
+
+
 def get_media_duration_ms(file_path):
     """Возвращает длительность медиафайла в миллисекундах через ffprobe."""
+    ffprobe_cmd = get_ffprobe_path()
     cmd = [
-        "ffprobe",
+        ffprobe_cmd,
         "-v",
         "error",
         "-show_entries",
