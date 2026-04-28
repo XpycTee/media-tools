@@ -139,6 +139,29 @@
   pointer-events: auto;
 }
 
+.video-page .default-subtitle-wrap {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.video-page .default-subtitle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.video-page .default-subtitle-radio {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
 .video-page .column .track-name-input:focus {
   box-shadow: 0 0 0 3px var(--color-focus-ring-soft);
 }

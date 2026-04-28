@@ -14,6 +14,13 @@ SPEC.loader.exec_module(video_merger)
 
 
 class VideoMergerTests(unittest.TestCase):
+    def _get_flag_value_pairs(self, cmd, flag_prefix):
+        pairs = []
+        for index, value in enumerate(cmd[:-1]):
+            if value.startswith(flag_prefix):
+                pairs.append([value, cmd[index + 1]])
+        return pairs
+
     def test_find_file_returns_none_for_relative_path_without_video_root(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("VIDEO_ROOT", None)
@@ -38,3 +45,32 @@ class VideoMergerTests(unittest.TestCase):
                 os.environ.pop("VIDEO_ROOT", None)
                 with patch("pathlib.Path.cwd", return_value=Path(temp_dir)):
                     self.assertFalse(video_merger.is_video_root_configured())
+
+    def test_build_ffmpeg_command_defaults_first_subtitle_when_none_marked(self):
+        cmd, output_file = video_merger.build_ffmpeg_command(
+            "/media/video.mkv",
+            [],
+            [
+                {"name": "Sub 1", "file": "/media/sub1.srt"},
+                {"name": "Sub 2", "file": "/media/sub2.srt"},
+            ],
+        )
+
+        self.assertEqual(output_file, "/media/muxed_video.mkv")
+        disposition_pairs = self._get_flag_value_pairs(cmd, "-disposition:s:")
+        self.assertIn(["-disposition:s:0", "default"], disposition_pairs)
+        self.assertIn(["-disposition:s:1", "0"], disposition_pairs)
+
+    def test_build_ffmpeg_command_honors_explicit_default_subtitle(self):
+        cmd, _ = video_merger.build_ffmpeg_command(
+            "/media/video.mkv",
+            [],
+            [
+                {"name": "Sub 1", "file": "/media/sub1.srt"},
+                {"name": "Sub 2", "file": "/media/sub2.srt", "default": True},
+            ],
+        )
+
+        disposition_pairs = self._get_flag_value_pairs(cmd, "-disposition:s:")
+        self.assertIn(["-disposition:s:0", "0"], disposition_pairs)
+        self.assertIn(["-disposition:s:1", "default"], disposition_pairs)

@@ -191,7 +191,11 @@ def _process_single_video(video_key, streams, progress_cb, output_target=None):
             print(f"[DEBUG _process_single_video] Субтитры не найдены: {sub_file_key}", file=sys.stderr)
             return f"Subtitle file {sub.get('file')} not found"
         print(f"[DEBUG _process_single_video] Субтитры найдены: {path}", file=sys.stderr)
-        subtitle_files.append({"name": sub.get("name", ""), "file": path})
+        subtitle_files.append({
+            "name": sub.get("name", ""),
+            "file": path,
+            "default": bool(sub.get("default")),
+        })
 
     import sys
     duration_ms = get_media_duration_ms(video_path)

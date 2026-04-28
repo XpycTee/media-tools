@@ -152,11 +152,28 @@ def build_ffmpeg_command(video_file, audios, subtitles, output_file=None):
     for idx, sub in enumerate(subtitles):
         metadata_args.extend([f"-metadata:s:s:{idx}", f"title={sub['name']}"])
 
+    # Определяем, какие субтитры должны быть включены по умолчанию
+    default_indices = []
+    for idx, sub in enumerate(subtitles):
+        if sub.get('default'):
+            default_indices.append(idx)
+    # Если ни один не отмечен как default, выбираем первый (fallback)
+    if not default_indices and subtitles:
+        default_indices = [0]
+
+    # Добавляем disposition для субтитров
+    disposition_args = []
+    for idx in range(len(subtitles)):
+        if idx in default_indices:
+            disposition_args.extend([f"-disposition:s:{idx}", "default"])
+        else:
+            disposition_args.extend([f"-disposition:s:{idx}", "0"])
+
     if not output_file:
         dir_name = os.path.dirname(video_file)
         base_name = os.path.basename(video_file)
         output_file = os.path.join(dir_name, f"muxed_{base_name}")
-    final_cmd = cmd + map_args + metadata_args + ["-c:v", "copy", "-c:a", "copy", "-c:s", "copy", output_file]
+    final_cmd = cmd + map_args + metadata_args + disposition_args + ["-c:v", "copy", "-c:a", "copy", "-c:s", "copy", output_file]
     return final_cmd, output_file
 
 
