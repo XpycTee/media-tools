@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ALLOWED_EXTENSIONS = {
-    "audio": {".mka"},
+    "audio": {".mka", ".ac3"},
     "subtitle": {".srt", ".ass", ".vtt"},
     "video": {".mkv"},
 }
@@ -26,19 +26,19 @@ def build_directory_selection_payload(directory, media_type):
     root = Path(directory)
     files = []
 
-    for current_root, _, filenames in os.walk(root):
-        for filename in filenames:
-            full_path = Path(current_root) / filename
-            if not is_allowed_media_file(full_path, media_type):
-                continue
-            relative_name = str(full_path.relative_to(root))
-            files.append(
-                {
-                    "path": str(full_path),
-                    "display_name": filename,
-                    "relative_name": relative_name,
-                }
-            )
+    for item in root.iterdir():
+        if not item.is_file():
+            continue
+        if not is_allowed_media_file(item, media_type):
+            continue
+        relative_name = item.name
+        files.append(
+            {
+                "path": str(item),
+                "display_name": item.name,
+                "relative_name": relative_name,
+            }
+        )
 
     return {
         "selection_kind": "directory",
