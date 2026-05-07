@@ -81,13 +81,24 @@ def _calc_overall_percent(processed, total, current_file_percent):
 
 
 def _run_ffmpeg_with_progress(cmd, duration_ms, progress_cb):
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
+    import sys
+    print(f"[DEBUG _run_ffmpeg_with_progress] Запуск команды: {cmd}", file=sys.stderr)
+    print(f"[DEBUG _run_ffmpeg_with_progress] Первый элемент (исполняемый файл): {cmd[0] if cmd else 'None'}", file=sys.stderr)
+    print(f"[DEBUG _run_ffmpeg_with_progress] Проверяем существование файла: {os.path.exists(cmd[0]) if cmd and cmd[0] else 'N/A'}", file=sys.stderr)
+    
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+    except Exception as e:
+        print(f"[DEBUG _run_ffmpeg_with_progress] Исключение при запуске subprocess: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        return f"Failed to start ffmpeg: {e}"
 
     output_lines = []
     for line in proc.stdout:

@@ -179,10 +179,14 @@ def build_ffmpeg_command(video_file, audios, subtitles, output_file=None):
 
 def build_ffmpeg_progress_command(video_file, audios, subtitles, output_file=None):
     """Создаём команду ffmpeg c machine-readable прогрессом в stdout."""
+    import sys
+    print(f"[DEBUG build_ffmpeg_progress_command] Начало, видео: {video_file}", file=sys.stderr)
     cmd, output_file = build_ffmpeg_command(video_file, audios, subtitles, output_file=output_file)
+    print(f"[DEBUG build_ffmpeg_progress_command] Базовая команда построена, первый элемент: {cmd[0] if cmd else 'None'}", file=sys.stderr)
     # Global options for progress reporting.
     progress_flags = ["-nostats", "-progress", "pipe:1"]
     cmd = [cmd[0]] + progress_flags + cmd[1:]
+    print(f"[DEBUG build_ffmpeg_progress_command] Итоговая команда: {cmd}", file=sys.stderr)
     return cmd, output_file
 
 
@@ -207,21 +211,28 @@ def get_ffprobe_path():
 
 def get_ffmpeg_path():
     """Возвращает путь к ffmpeg, учитывая бандл PyInstaller."""
+    import sys
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         bundle_bin_dir = os.path.join(sys._MEIPASS, 'bin')
         ffmpeg_path = os.path.join(bundle_bin_dir, 'ffmpeg')
         if os.path.exists(ffmpeg_path):
+            print(f"[DEBUG get_ffmpeg_path] Найден ffmpeg в бандле: {ffmpeg_path}", file=sys.stderr)
             return ffmpeg_path
         resources_dir = os.path.join(sys._MEIPASS, '..', 'Resources', 'bin')
         ffmpeg_path = os.path.join(resources_dir, 'ffmpeg')
         if os.path.exists(ffmpeg_path):
+            print(f"[DEBUG get_ffmpeg_path] Найден ffmpeg в ресурсах: {ffmpeg_path}", file=sys.stderr)
             return ffmpeg_path
+    print(f"[DEBUG get_ffmpeg_path] Используем ffmpeg из PATH", file=sys.stderr)
     return "ffmpeg"
 
 
 def get_media_duration_ms(file_path):
     """Возвращает длительность медиафайла в миллисекундах через ffprobe."""
+    import sys
+    print(f"[DEBUG get_media_duration_ms] Начало, файл: {file_path}", file=sys.stderr)
     ffprobe_cmd = get_ffprobe_path()
+    print(f"[DEBUG get_media_duration_ms] ffprobe команда: {ffprobe_cmd}", file=sys.stderr)
     cmd = [
         ffprobe_cmd,
         "-v",
@@ -232,14 +243,29 @@ def get_media_duration_ms(file_path):
         "default=noprint_wrappers=1:nokey=1",
         file_path,
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    if proc.returncode != 0:
-        return None
-
-    value = (proc.stdout or "").strip()
-    if not value:
-        return None
+    print(f"[DEBUG get_media_duration_ms] Полная команда: {cmd}", file=sys.stderr)
     try:
-        return max(1, int(float(value) * 1000))
-    except ValueError:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        print(f"[DEBUG get_media_duration_ms] Код возврата: {proc.returncode}", file=sys.stderr)
+        print(f"[DEBUG get_media_duration_ms] stdout: {proc.stdout}", file=sys.stderr)
+        print(f"[DEBUG get_media_duration_ms] stderr: {proc.stderr}", file=sys.stderr)
+        if proc.returncode != 0:
+            print(f"[DEBUG get_media_duration_ms] Ошибка выполнения ffprobe", file=sys.stderr)
+            return None
+
+        value = (proc.stdout or "").strip()
+        if not value:
+            print(f"[DEBUG get_media_duration_ms] Пустой stdout", file=sys.stderr)
+            return None
+        try:
+            result = max(1, int(float(value) * 1000))
+            print(f"[DEBUG get_media_duration_ms] Результат: {result} мс", file=sys.stderr)
+            return result
+        except ValueError as e:
+            print(f"[DEBUG get_media_duration_ms] ValueError: {e}", file=sys.stderr)
+            return None
+    except Exception as e:
+        print(f"[DEBUG get_media_duration_ms] Исключение при запуске subprocess: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         return None
