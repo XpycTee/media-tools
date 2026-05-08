@@ -234,7 +234,11 @@ function collectCompilePayload() {
       const trackInput = col.querySelector(".track-name-input");
       const trackName = trackInput?.value?.trim() || trackInput?.placeholder || "";
       const fileRef = file.dataset.filepath || file.dataset.filename;
-      if (type === "audio") data[videoKey].audio.push({ name: trackName, file: fileRef });
+      if (type === "audio") {
+        const defaultRadio = col.querySelector('.default-audio-radio');
+        const isDefault = defaultRadio ? defaultRadio.checked : false;
+        data[videoKey].audio.push({ name: trackName, file: fileRef, default: isDefault });
+      }
       if (type === "subtitle") {
         const defaultRadio = col.querySelector('.default-subtitle-radio');
         const isDefault = defaultRadio ? defaultRadio.checked : false;
@@ -389,6 +393,18 @@ function handleDefaultSubtitleChange(radio) {
   column.dataset.defaultSubtitle = radio.checked ? 'true' : 'false';
 }
 
+function handleDefaultAudioChange(radio) {
+  // Устанавливаем data-атрибут для колонки аудио
+  const column = radio.closest('.column');
+  if (!column) return;
+  // Снимаем атрибут у всех колонок аудио
+  document.querySelectorAll('.column[data-type="audio"]').forEach(col => {
+    col.dataset.defaultAudio = 'false';
+  });
+  // Устанавливаем атрибут для выбранной колонки
+  column.dataset.defaultAudio = radio.checked ? 'true' : 'false';
+}
+
 function removeFile(event) {
   event.preventDefault();
   const item = event.target.closest(".file-item");
@@ -424,10 +440,13 @@ function addColumn(type) {
   const column = document.createElement("div");
   column.className = "column panel";
   column.dataset.type = type;
-  // Добавляем радио-кнопку "Включить по умолчанию" только для субтитров
-  const defaultRadioHtml = type === "subtitle"
-    ? `<div class="default-subtitle-wrap"><label class="default-subtitle-label"><input type="radio" name="default-subtitle" class="default-subtitle-radio" onchange="handleDefaultSubtitleChange(this)"> Включить по умолчанию</label></div>`
-    : '';
+  // Добавляем радио-кнопку "Включить по умолчанию" для субтитров и аудио
+  let defaultRadioHtml = '';
+  if (type === "subtitle") {
+    defaultRadioHtml = `<div class="default-subtitle-wrap"><label class="default-subtitle-label"><input type="radio" name="default-subtitle" class="default-subtitle-radio" onchange="handleDefaultSubtitleChange(this)"> Включить по умолчанию</label></div>`;
+  } else if (type === "audio") {
+    defaultRadioHtml = `<div class="default-audio-wrap"><label class="default-audio-label"><input type="radio" name="default-audio" class="default-audio-radio" onchange="handleDefaultAudioChange(this)"> Включить по умолчанию</label></div>`;
+  }
   column.innerHTML = `<div class="column-header"><div class="column-header-top"><span class="column-title">${title}</span><button class="delete-btn btn btn--danger" type="button" onclick="removeColumn(this)">Удалить</button></div><div class="track-name-wrap"><input type="text" class="track-name-input field" placeholder="${placeholder}" oninput="handleTrackNameInput(event)" /><button class="track-name-clear" type="button" aria-label="Очистить поле" onclick="clearTrackName(this)"></button></div>${defaultRadioHtml}</div><div class="column-content" id="${id}" data-type="${type}"></div>${buildUploadControls(type, id)}`;
   columnsContainer.appendChild(column);
   createSortable(column.querySelector(".column-content"));

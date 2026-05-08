@@ -152,19 +152,33 @@ def build_ffmpeg_command(video_file, audios, subtitles, output_file=None):
     for idx, sub in enumerate(subtitles):
         metadata_args.extend([f"-metadata:s:s:{idx}", f"title={sub['name']}"])
 
+    # Определяем, какие аудио дорожки должны быть включены по умолчанию
+    audio_default_indices = []
+    for idx, audio in enumerate(audios):
+        if audio.get('default'):
+            audio_default_indices.append(idx)
+    # Если ни один не отмечен как default, выбираем первый (fallback)
+    if not audio_default_indices and audios:
+        audio_default_indices = [0]
+
     # Определяем, какие субтитры должны быть включены по умолчанию
-    default_indices = []
+    subtitle_default_indices = []
     for idx, sub in enumerate(subtitles):
         if sub.get('default'):
-            default_indices.append(idx)
+            subtitle_default_indices.append(idx)
     # Если ни один не отмечен как default, выбираем первый (fallback)
-    if not default_indices and subtitles:
-        default_indices = [0]
+    if not subtitle_default_indices and subtitles:
+        subtitle_default_indices = [0]
 
-    # Добавляем disposition для субтитров
+    # Добавляем disposition для аудио и субтитров
     disposition_args = []
+    for idx in range(len(audios)):
+        if idx in audio_default_indices:
+            disposition_args.extend([f"-disposition:a:{idx}", "default"])
+        else:
+            disposition_args.extend([f"-disposition:a:{idx}", "0"])
     for idx in range(len(subtitles)):
-        if idx in default_indices:
+        if idx in subtitle_default_indices:
             disposition_args.extend([f"-disposition:s:{idx}", "default"])
         else:
             disposition_args.extend([f"-disposition:s:{idx}", "0"])
